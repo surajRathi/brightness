@@ -28,8 +28,9 @@ const char USAGE[] = \
     "\n"
     "Mandatory arguments to long options are mandatory for short options too.\n"
     "    -d, --device=DEV	specify the device name,\n"
-    "			            if none give, uses the first available device\n"
-    "    -h, --help		display this help and exit\n"
+    "			              if none give, uses the first available device\n"
+    "    -h, --help		    display this help and exit\n"
+    "    -s, --show         Show percent for all devices"
     "\n"
     "NEW_VALUE should be of the form:\n"
     "    [+,-]NUMBER[%]\n";
@@ -80,12 +81,19 @@ void display(const std::string &path) {
               << std::endl;
 }
 
+void show_all() {
+    for (const auto &entry : fs::directory_iterator(BASE_PATH)) {
+        auto path = entry.path().string();
+        display(path);
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (argc == 0) return 1; // Should never happen.
 
     std::string value;  // brightness value. should be -1 if unset
     std::string device;
-    bool help;
+    bool help, show;
 
     std::string *dummy = &value;
     for (size_t i = 1; i < argc; ++i) {
@@ -115,6 +123,9 @@ int main(int argc, char *argv[]) {
                     case 'd':
                         dummy = &device;
                         break;
+                    case 's':
+                        show = true;
+                        break;
                     default:
                         std::cout << "Invalid option '" << argv[i][j] << "'." << std::endl;
                         return 1;
@@ -138,6 +149,8 @@ int main(int argc, char *argv[]) {
             help = true;
         else if (opt == "device")
             device = val;
+        else if (opt == "show")
+            show = true;
         else {
             std::cout << "Invalid option '" << opt << "'." << std::endl;
             return 1;
@@ -149,12 +162,10 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    /* if (show_all) {
-     *  //do
-     *  return 0]
-     *  }
-     */
-
+    if (show) {
+        show_all();
+        return 0;
+    }
 
     std::string path = get_path(device);
 
