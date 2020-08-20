@@ -3,6 +3,7 @@
 
 #include <experimental/filesystem>
 #include <cmath>
+#include <cstring>
 
 /*
  * TODO
@@ -13,7 +14,7 @@
 namespace fs = std::experimental::filesystem;
 
 const char BASE_PATH[] = "/sys/class/backlight/";
-const float MIN_PERCENT_FRAC = 0.01;
+const float MIN_PERCENT_FRAC = 0.001;
 
 // TODO: constexpr
 //const float exp_factor = 40; // 50;
@@ -83,24 +84,85 @@ int main(int argc, char *argv[]) {
     if (argc == 0) return 1; // Should never happen.
 
     std::string value;  // brightness value. should be -1 if unset
-    if (argc == 2) value = argv[1];
+    std::string device;
+    bool help;
 
-    if (value == "-h" || value == "--help") {
+    std::string *dummy = &value;
+    for (size_t i = 1; i < argc; ++i) {
+        if (std::strlen(argv[i]) == 0) continue;
+        if (argv[i][0] != '-') {
+            *dummy = argv[i];
+            dummy = &value;
+            continue;
+        }
+
+        if (std::strlen(argv[i]) < 1) continue;
+
+        if (argv[i][1] != '-') { // Short form option
+
+            // Special case because we use -10% as a value
+            if ('0' <= argv[i][1] && argv[i][1] <= '9') {
+                value = argv[i];
+                continue;
+            }
+
+            // Short form options
+            for (size_t j = 1; j < std::strlen(argv[i]); ++j) {
+                switch (argv[i][j]) {
+                    case 'h':
+                        help = true;
+                        break;
+                    case 'd':
+                        dummy = &device;
+                        break;
+                    default:
+                        std::cout << "Invalid option '" << argv[i][j] << "'." << std::endl;
+                        return 1;
+                }
+            }
+            continue;
+        }
+
+        // Long form options
+        std::string_view opt(argv[i]), val(argv[i]);
+        auto pos = opt.rfind('=');
+        if (pos != std::string::npos) {
+            opt.remove_suffix(opt.length() - pos);
+            val.remove_prefix(pos + 1);
+        } else {
+            val.remove_prefix(val.length());
+        };
+        opt.remove_prefix(2);
+
+        if (opt == "help")
+            help = true;
+        else if (opt == "device")
+            device = val;
+        else {
+            std::cout << "Invalid option '" << opt << "'." << std::endl;
+            return 1;
+        }
+    }
+
+    if (help) {
         std::cout << USAGE;
         return 0;
     }
 
-    // TODO: set by options
-    std::string device_spec;
+    /* if (show_all) {
+     *  //do
+     *  return 0]
+     *  }
+     */
 
-    std::string path = get_path(device_spec);
 
+    std::string path = get_path(device);
 
     if (path.empty()) {
-        if (device_spec.empty())
+        if (device.empty())
             std::cout << "No backlight found." << std::endl;
         else
-            std::cout << "Backlight '" << device_spec << "' not found." << std::endl;
+            std::cout << "Backlight '" << device << "' not found." << std::endl;
         return 1;
     }
 
