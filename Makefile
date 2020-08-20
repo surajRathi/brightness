@@ -5,7 +5,9 @@ INSTALL_DIR = ~/.local/bin/# trailing backslash req and NO trailing space
 
 all: default
 
-default: compile
+default: brightness
+
+brightness: compile
 	sudo chown root:root brightness
 	sudo chmod 6511 brightness
 
