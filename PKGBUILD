@@ -7,7 +7,6 @@
 pkgname=brightness
 pkgver=0.1
 pkgrel=1
-#epoch=
 pkgdesc="Controls screen brightness using /sys"
 arch=('any')
 #url=""
