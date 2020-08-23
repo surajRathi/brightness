@@ -35,14 +35,20 @@ const char USAGE[] = \
     "    [+,-]NUMBER[%]\n";
 
 
+// Percent is a fractional value
 int percent_to_brightness(float percent, int max_brightness) {
-    if (percent > 1) percent /= 100; // Dirty hack for xx% and 0.xx
+    if (percent <= 0) percent = MIN_PERCENT_FRAC;
+    else if (percent > 1) percent = 1;
 
     return static_cast<int>(static_cast<float>(max_brightness) * std::log(1 + log_factor * percent) / logged_factor);
 }
 
-float brightness_to_percent(float brightness, int max_brightness) {
-    return (std::exp(logged_factor * brightness / static_cast<float>(max_brightness)) - 1) / log_factor;
+float brightness_to_percent(int brightness, int max_brightness) {
+    if (brightness <= 0) brightness = static_cast<int>(static_cast<float>(max_brightness) * MIN_PERCENT_FRAC);
+    else if (brightness > max_brightness) brightness = max_brightness;
+
+    return (std::exp(static_cast<float>(brightness) * logged_factor / static_cast<float>(max_brightness)) - 1) /
+           log_factor;
 }
 
 
@@ -197,10 +203,10 @@ int main(int argc, char *argv[]) {
         switch (value[0]) {
             case '+' :
             case '-' :
-                new_value = percent_to_brightness(100 * brightness_to_percent(cur, max) + std::stof(value), max);
+                new_value = percent_to_brightness(brightness_to_percent(cur, max) + std::stof(value) / 100, max);
                 break;
             default:
-                new_value = percent_to_brightness(std::stof(value), max);
+                new_value = percent_to_brightness(std::stof(value) / 100, max);
         }
     } else {
         switch (value[0]) { // value.back() vs value[value.length() - 1]
